@@ -30,6 +30,7 @@
       text-align: center;
       color: #ddd;
       flex-shrink: 0;
+      position: relative;
     }
 
     .story img {
@@ -52,7 +53,29 @@
       color: #aaa;
     }
 
-    /* Main Feed */
+    /* Your Story (special style) */
+    .your-story img {
+      border: 3px solid #4caf50; /* green border */
+    }
+
+    .your-story .add-icon {
+      position: absolute;
+      bottom: 10px;
+      right: 8px;
+      background-color: #4caf50;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 14px;
+      font-weight: bold;
+      border: 2px solid #000;
+    }
+
+    /* Feed */
     .feed {
       padding: 15px;
     }
@@ -106,12 +129,15 @@
 </head>
 <body>
 
-  <!-- Stories Row (Replaces Title) -->
+  <!-- Stories Row -->
   <div class="top-bar">
-    <div class="story">
-      <img src="https://i.pravatar.cc/100?img=1" alt="User 1" />
-      <p>Arif</p>
+    <!-- Your Story -->
+    <div class="story your-story">
+      <img src="https://i.pravatar.cc/100?img=1" alt="Your Profile" />
+      <div class="add-icon">+</div>
+      <p>You</p>
     </div>
+
     <div class="story">
       <img src="https://i.pravatar.cc/100?img=2" alt="User 2" />
       <p>Sadia</p>
@@ -137,7 +163,7 @@
   <!-- Feed -->
   <div class="feed">
     <div class="post">
-      <span class="user">@arif_vlogs</span>
+      <span class="user">@you</span>
       <p class="desc">Exploring Old Dhaka vibes! 🎥</p>
       <video src="yourvideo.mp4" controls></video>
     </div>
