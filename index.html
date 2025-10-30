@@ -1,52 +1,393 @@
-<!DOCTYPE html><html lang="en">
+<!doctype html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Poksy Demo</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Poksy — prototype</title>
 <style>
-  body { font-family: Arial, sans-serif; margin:0; padding:0; background:#111; color:#fff; }
-  .screen { display:none; padding:20px; text-align:center; }
-  .active { display:block; }
-  button { padding:10px 20px; margin:10px; border:none; border-radius:5px; background:linear-gradient(90deg, #ff007f, #9b00ff); color:#fff; cursor:pointer; font-weight:bold; }
-  .post, .story { background:#222; margin:10px; padding:10px; border-radius:10px; }
-  .chat-msg { background:#333; margin:5px; padding:5px; border-radius:5px; text-align:left; }
+  :root{
+    --bg:#0f1724; --card:#0b1220; --muted:#94a3b8; --accent:#ff6b6b;
+    --glass: rgba(255,255,255,0.03);
+    --max-width:900px;
+    font-family: Inter, "Segoe UI", Roboto, system-ui, -apple-system, "Helvetica Neue", Arial;
+  }
+  html,body{height:100%; margin:0; background:linear-gradient(180deg,#071028 0%, #081827 60%); color:#e6eef6;}
+  .app{max-width:var(--max-width); margin:0 auto; padding:16px; min-height:100vh; box-sizing:border-box;}
+  header{display:flex; align-items:center; gap:12px; margin-bottom:12px;}
+  .logo{display:flex; align-items:center; gap:8px;}
+  .logo .mark{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#ff7a7a,#ffb199);display:flex;align-items:center;justify-content:center;font-weight:700;color:#081827}
+  .title{font-weight:700;font-size:20px}
+  .subtitle{font-size:12px;color:var(--muted)}
+  .top-actions{margin-left:auto; display:flex; gap:8px; align-items:center;}
+  button.icon-btn{background:var(--glass); border:1px solid rgba(255,255,255,0.03); color:inherit; padding:8px 10px; border-radius:10px; display:inline-flex; gap:8px; align-items:center; cursor:pointer}
+  button.primary{background:linear-gradient(90deg,var(--accent),#ff9f9f); color:#081827; border:none}
+  .layout{display:grid; grid-template-columns:1fr 320px; gap:14px;}
+  @media (max-width:900px){ .layout{grid-template-columns:1fr} .side{order:2} }
+  .feed{display:flex; flex-direction:column; gap:12px;}
+  .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:12px; padding:12px; box-shadow:0 6px 18px rgba(2,6,23,0.6); border:1px solid rgba(255,255,255,0.03);}
+  .post-head{display:flex; gap:10px; align-items:center;}
+  .avatar{width:44px;height:44px;border-radius:10px; background:linear-gradient(180deg,#6ee7b7,#3b82f6); display:flex; align-items:center; justify-content:center; font-weight:700; color:#081827}
+  .meta{flex:1}
+  .username{font-weight:700}
+  .time{font-size:12px;color:var(--muted)}
+  .post-media{margin-top:10px; border-radius:10px; overflow:hidden; background:#000; min-height:180px; display:flex; align-items:center; justify-content:center}
+  .post-media video, .post-media img{width:100%; height:auto; display:block;}
+  .post-body{margin-top:8px; font-size:15px}
+  .post-actions{display:flex; gap:12px; align-items:center; margin-top:10px}
+  .action{display:inline-flex; gap:8px; align-items:center; cursor:pointer; color:var(--muted)}
+  .action.liked{color:var(--accent)}
+  .comment-list{margin-top:8px; font-size:14px}
+  .comment{padding:6px 8px; background:rgba(255,255,255,0.02); border-radius:8px; margin-top:6px}
+  .side{position:sticky; top:16px; height:fit-content;}
+  .search{display:flex; gap:8px;}
+  input.search-input{flex:1;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.03); background:transparent; color:inherit}
+  .trends{margin-top:12px}
+  .trend{padding:8px;border-radius:8px;background:rgba(255,255,255,0.02); margin-top:8px; display:flex; justify-content:space-between; align-items:center;}
+  .profile-mini{display:flex; gap:10px; align-items:center; margin-top:12px}
+  .follow-btn{padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04); background:transparent; cursor:pointer}
+  /* create post floating button */
+  .create-btn{position:fixed; right:18px; bottom:18px; width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,var(--accent),#ffb199); display:flex; align-items:center; justify-content:center; color:#081827; box-shadow:0 10px 30px rgba(0,0,0,0.5); border:none; cursor:pointer;}
+  .modal{position:fixed; left:0; top:0; right:0; bottom:0; display:flex; align-items:flex-end; justify-content:center; background:linear-gradient(180deg, rgba(2,6,23,0.6), rgba(2,6,23,0.9)); padding:20px; box-sizing:border-box; }
+  .sheet{width:100%; max-width:720px; background:linear-gradient(180deg,#071428, #061026); border-radius:14px; padding:14px; box-shadow:0 10px 40px rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.03)}
+  .field{display:flex; flex-direction:column; gap:6px; margin-top:8px}
+  textarea{resize:vertical; min-height:60px; background:transparent; color:inherit; border:1px solid rgba(255,255,255,0.03); padding:8px; border-radius:8px}
+  .small{font-size:13px;color:var(--muted)}
+  .tag{display:inline-block;padding:6px 8px;border-radius:999px;background:rgba(255,255,255,0.02); margin-right:6px; margin-top:6px; font-size:13px}
+  .empty{color:var(--muted); text-align:center; padding:40px}
+  footer{margin-top:36px; text-align:center; color:var(--muted); font-size:13px}
 </style>
 </head>
-<body><div id="login" class="screen active">
-  <h1>Poksy Login</h1>
-  <button onclick="showScreen('home')">Login (Demo)</button>
-  <button onclick="showScreen('signup')">Signup (Demo)</button>
-</div><div id="signup" class="screen">
-  <h1>Poksy Signup</h1>
-  <button onclick="showScreen('home')">Create Account (Demo)</button>
-  <button onclick="showScreen('login')">Back to Login</button>
-</div><div id="home" class="screen">
-  <h1>Poksy Home Feed</h1>
-  <div class="story">Story 1</div>
-  <div class="story">Story 2</div>
-  <div class="post">Post by User A</div>
-  <div class="post">Post by User B</div>
-  <button onclick="showScreen('profile')">Profile</button>
-  <button onclick="showScreen('chat')">Chat</button>
-  <button onclick="alert('Live Streaming Demo')">Go Live</button>
-  <button onclick="alert('Create Post Demo')">Create Post</button>
-</div><div id="profile" class="screen">
-  <h1>Your Profile</h1>
-  <p>Username: DemoUser</p>
-  <div class="post">Your Post 1</div>
-  <div class="post">Your Post 2</div>
-  <button onclick="showScreen('home')">Back to Home</button>
-</div><div id="chat" class="screen">
-  <h1>Chat (Demo)</h1>
-  <div class="chat-msg">User A: Hi!</div>
-  <div class="chat-msg">You: Hello!</div>
-  <button onclick="alert('Voice Call Demo')">Voice Call</button>
-  <button onclick="alert('Video Call Demo')">Video Call</button>
-  <button onclick="showScreen('home')">Back to Home</button>
-</div><script>
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+<body>
+  <div class="app">
+    <header>
+      <div class="logo">
+        <div class="mark">P</div>
+        <div>
+          <div class="title">Poksy</div>
+          <div class="subtitle">Bangla vlogs & vibes</div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <div class="small">Signed in as <strong id="me-name">rubi</strong></div>
+        <button class="icon-btn" id="refresh-btn">↻ Refresh</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <main class="feed" id="feed"></main>
+
+      <aside class="side">
+        <div class="card">
+          <div class="search">
+            <input id="search-input" class="search-input" placeholder="Search people, #tags or text" />
+            <button class="icon-btn" id="search-btn">🔎</button>
+          </div>
+
+          <div class="trends">
+            <h4 style="margin:10px 0 6px 0">Trending</h4>
+            <div id="trending-list">
+              <!-- trends -->
+            </div>
+          </div>
+
+          <div style="margin-top:12px">
+            <h4 style="margin:6px 0">Recommended</h4>
+            <div id="recommend-list"></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <h4>About Poksy</h4>
+          <p class="small">A prototype: short vlogs, quick sharing, hashtags & local trends. Built for Bangladesh Gen-Z.</p>
+          <div style="margin-top:8px"><small class="small">Language: বাংলা / English</small></div>
+        </div>
+      </aside>
+    </div>
+
+    <button class="create-btn" id="open-create" title="Create post">＋</button>
+
+    <footer>Prototype — data stored locally. Share feedback.</footer>
+  </div>
+
+  <!-- Create modal (hidden) -->
+  <div id="modal" class="modal" style="display:none;">
+    <div class="sheet">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <strong>Create post</strong>
+        <button id="close-modal" class="icon-btn">✕</button>
+      </div>
+
+      <div class="field">
+        <label class="small">Who you are</label>
+        <input id="poster-name" placeholder="e.g. rubi" />
+      </div>
+
+      <div class="field">
+        <label class="small">Caption (use #hashtags)</label>
+        <textarea id="caption" placeholder="Write something... #dhaka #campus"></textarea>
+      </div>
+
+      <div class="field">
+        <label class="small">Attach video / image (short mp4/webm recommended)</label>
+        <input id="media-file" type="file" accept="video/*,image/*" />
+        <div id="preview" class="post-media" style="min-height:120px">No media selected</div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; margin-top:10px;">
+        <div class="small">Visibility: Public</div>
+        <div style="display:flex; gap:8px">
+          <button id="post-btn" class="primary">Post</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* Poksy prototype JS
+ - Keeps data in localStorage under 'poksy_posts' and 'poksy_users'
+ - Supports video/image preview, like, comment, follow, search, hashtags
+*/
+
+// ---- Utilities ----
+const uid = (n=6)=>Math.random().toString(36).slice(2,n+2);
+const timeAgo = t => {
+  const s = Math.floor((Date.now()-t)/1000);
+  if(s<60) return s+'s';
+  if(s<3600) return Math.floor(s/60)+'m';
+  if(s<86400) return Math.floor(s/3600)+'h';
+  return Math.floor(s/86400)+'d';
+};
+
+const STORAGE_POSTS = 'poksy_posts_v1';
+const STORAGE_USERS = 'poksy_users_v1';
+const STORAGE_ME = 'poksy_me_v1';
+
+// ---- Seed data (only if empty) ----
+if(!localStorage.getItem(STORAGE_POSTS)){
+  const now = Date.now();
+  const sample = [
+    {id: uid(), user:{name:'rubi', handle:'@rubi'}, caption:'First vlog from campus! #dhaka #study', mediaType:'video', mediaURL:'', created: now-1000*60*60*6, likes:12, liked:false, comments:[{id:uid(),user:'tanvir',body:'love this!'}]},
+    {id: uid(), user:{name:'amir', handle:'@amir'}, caption:'Evening tea & life thoughts #vlog', mediaType:'image', mediaURL:'', created: now-1000*60*60*26, likes:5, liked:false, comments:[]},
+  ];
+  localStorage.setItem(STORAGE_POSTS, JSON.stringify(sample));
 }
-</script></body>
+if(!localStorage.getItem(STORAGE_USERS)){
+  const users = [
+    {name:'rubi', handle:'@rubi', followers:120, following:false},
+    {name:'amir', handle:'@amir', followers:80, following:false},
+    {name:'tanvir', handle:'@tanvir', followers:200, following:true},
+  ];
+  localStorage.setItem(STORAGE_USERS, JSON.stringify(users));
+}
+if(!localStorage.getItem(STORAGE_ME)){
+  localStorage.setItem(STORAGE_ME, JSON.stringify({name:'rubi', handle:'@rubi'}));
+}
+
+// ---- State and helpers ----
+let posts = JSON.parse(localStorage.getItem(STORAGE_POSTS) || '[]');
+let users = JSON.parse(localStorage.getItem(STORAGE_USERS) || '[]');
+let me = JSON.parse(localStorage.getItem(STORAGE_ME) || '{}');
+
+document.getElementById('me-name').textContent = me.name || 'you';
+
+// render feed
+const feedEl = document.getElementById('feed');
+function savePosts(){ localStorage.setItem(STORAGE_POSTS, JSON.stringify(posts)); }
+function saveUsers(){ localStorage.setItem(STORAGE_USERS, JSON.stringify(users)); }
+
+function renderFeed(filterText=''){
+  feedEl.innerHTML = '';
+  const list = posts.slice().sort((a,b)=>b.created-a.created);
+  if(!list.length){ feedEl.innerHTML = '<div class="card empty">No posts yet. Create the first vlog!</div>'; return; }
+  list.forEach(p=>{
+    if(filterText){
+      const ft = filterText.toLowerCase();
+      if(!(p.caption.toLowerCase().includes(ft) || p.user.name.toLowerCase().includes(ft) || p.user.handle.toLowerCase().includes(ft) || (p.tags||[]).some(t=>t.includes(ft)))) return;
+    }
+    const card = document.createElement('article');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="post-head">
+        <div class="avatar">${p.user.name[0]||'P'}</div>
+        <div class="meta">
+          <div style="display:flex; gap:8px; align-items:center;">
+            <div class="username">${p.user.name}</div>
+            <div class="time">${p.user.handle} · ${timeAgo(p.created)}</div>
+          </div>
+        </div>
+      </div>
+      <div class="post-media" id="media-${p.id}">
+        ${p.mediaType==='video' ? `<video controls playsinline preload="metadata" src="${p.mediaURL}"></video>` : (p.mediaType==='image' ? `<img src="${p.mediaURL}" alt="post media" />` : '<div style="padding:24px;color:var(--muted)">No media</div>')}
+      </div>
+      <div class="post-body">${escapeHTML(p.caption||'')}</div>
+      <div class="post-actions">
+        <div class="action like-btn ${p.liked ? 'liked' : ''}" data-id="${p.id}">❤️ <span>${p.likes||0}</span></div>
+        <div class="action comment-btn" data-id="${p.id}">💬 <span>${(p.comments||[]).length}</span></div>
+        <div style="flex:1"></div>
+        <div class="action share-btn" data-id="${p.id}">🔗 Share</div>
+      </div>
+      <div class="comment-list" id="comments-${p.id}">${renderCommentsHTML(p.comments||[])}</div>
+    `;
+    feedEl.appendChild(card);
+  });
+}
+
+function renderCommentsHTML(comments){
+  if(!comments || !comments.length) return '<div class="small" style="color:var(--muted);margin-top:8px">No comments yet</div>';
+  return comments.map(c=>`<div class="comment"><strong>${escapeHTML(c.user)}</strong> · ${escapeHTML(c.body)}</div>`).join('');
+}
+
+function escapeHTML(s){ return String(s||'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
+
+// init render
+renderFeed();
+renderTrending();
+renderRecommended();
+
+// ---- Interactions ----
+document.getElementById('open-create').addEventListener('click', ()=>document.getElementById('modal').style.display='flex');
+document.getElementById('close-modal').addEventListener('click', ()=>document.getElementById('modal').style.display='none');
+document.getElementById('refresh-btn').addEventListener('click', ()=>{posts = JSON.parse(localStorage.getItem(STORAGE_POSTS)||'[]'); renderFeed(); renderTrending();});
+
+const fileInput = document.getElementById('media-file');
+const preview = document.getElementById('preview');
+fileInput.addEventListener('change', async (e)=>{
+  const f = e.target.files[0];
+  if(!f) return;
+  const url = URL.createObjectURL(f);
+  preview.innerHTML = f.type.startsWith('video/') ? `<video controls src="${url}" playsinline></video>` : `<img src="${url}" alt="preview">`;
+  preview.dataset.temp = url;
+  preview.dataset.type = f.type.startsWith('video/') ? 'video' : 'image';
+});
+
+// posting
+document.getElementById('post-btn').addEventListener('click', async ()=>{
+  const name = (document.getElementById('poster-name').value || me.name || 'anon').trim();
+  const caption = document.getElementById('caption').value.trim();
+  const tempURL = preview.dataset.temp || '';
+  const type = preview.dataset.type || '';
+  // convert file to dataURL for persistence (small demo; large files not ideal)
+  let dataURL = '';
+  if(tempURL){
+    // fetch blob then convert
+    try{
+      const blob = await fetch(tempURL).then(r=>r.blob());
+      dataURL = await blobToDataURL(blob);
+    }catch(e){
+      console.error(e);
+    }
+  }
+  const tags = (caption.match(/#\w+/g) || []).map(t=>t.toLowerCase().replace('#',''));
+  const newPost = { id: uid(8), user:{name, handle:'@'+name.toLowerCase()}, caption, mediaType: type || (dataURL.startsWith('data:image') ? 'image' : 'video'), mediaURL: dataURL, created: Date.now(), likes:0, liked:false, comments:[], tags };
+  posts.push(newPost);
+  savePosts();
+  // ensure user exists in list
+  if(!users.find(u=>u.name.toLowerCase()===name.toLowerCase())){
+    users.push({name, handle:'@'+name.toLowerCase(), followers:0, following:false});
+    saveUsers();
+  }
+  // cleanup modal
+  preview.innerHTML = 'No media selected';
+  delete preview.dataset.temp; delete preview.dataset.type;
+  document.getElementById('caption').value = '';
+  document.getElementById('poster-name').value = '';
+  document.getElementById('media-file').value = '';
+  document.getElementById('modal').style.display='none';
+  renderFeed();
+  renderTrending();
+  renderRecommended();
+});
+
+// helper blob->dataurl
+function blobToDataURL(blob){
+  return new Promise((res,rej)=>{
+    const r = new FileReader();
+    r.onload = ()=>res(r.result);
+    r.onerror = rej;
+    r.readAsDataURL(blob);
+  });
+}
+
+// delegate clicks for like/comment/share
+feedEl.addEventListener('click', e=>{
+  const like = e.target.closest('.like-btn');
+  const comment = e.target.closest('.comment-btn');
+  const share = e.target.closest('.share-btn');
+  if(like){ toggleLike(like.dataset.id); return; }
+  if(comment){ openCommentPrompt(comment.dataset.id); return; }
+  if(share){ copyShareLink(share.dataset.id); return; }
+});
+
+function toggleLike(id){
+  const p = posts.find(x=>x.id===id); if(!p) return;
+  p.liked = !p.liked; p.likes = (p.likes||0) + (p.liked ? 1 : -1);
+  savePosts(); renderFeed();
+}
+
+function openCommentPrompt(id){
+  const text = prompt('Add a comment:');
+  if(!text) return;
+  const p = posts.find(x=>x.id===id); if(!p) return;
+  p.comments = p.comments || [];
+  p.comments.push({id:uid(), user: me.name||'you', body:text});
+  savePosts(); renderFeed();
+}
+
+function copyShareLink(id){
+  const link = `poksy://post/${id}`; // demo deep link
+  navigator.clipboard?.writeText(link).then(()=> alert('Copied share link (demo): '+link), ()=> alert('Copy failed, link: '+link));
+}
+
+// search
+document.getElementById('search-btn').addEventListener('click', ()=> renderFeed(document.getElementById('search-input').value));
+document.getElementById('search-input').addEventListener('keydown', e=>{ if(e.key==='Enter') renderFeed(document.getElementById('search-input').value); });
+
+// trending & recommended
+function renderTrending(){
+  const trendMap = {};
+  posts.forEach(p=> (p.tags||[]).forEach(t=> trendMap[t]=(trendMap[t]||0)+1));
+  const arr = Object.entries(trendMap).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const container = document.getElementById('trending-list');
+  container.innerHTML = '';
+  if(!arr.length) container.innerHTML = '<div class="small" style="color:var(--muted)">No trends yet — use #hashtags in captions</div>';
+  arr.forEach(([tag,c])=>{
+    const d = document.createElement('div'); d.className='trend';
+    d.innerHTML = `<div>#${escapeHTML(tag)}</div><div class="small">${c}</div>`;
+    d.addEventListener('click', ()=>{ document.getElementById('search-input').value = '#'+tag; renderFeed(tag); });
+    container.appendChild(d);
+  });
+}
+
+function renderRecommended(){
+  const container = document.getElementById('recommend-list');
+  container.innerHTML = '';
+  users.slice(0,6).forEach(u=>{
+    const box = document.createElement('div'); box.className='profile-mini';
+    box.innerHTML = `<div class="avatar">${u.name[0]||'P'}</div><div style="flex:1"><div><strong>${u.name}</strong> <span class="small">${u.handle}</span></div><div class="small">${u.followers} followers</div></div><div><button class="follow-btn">${u.following?'Following':'Follow'}</button></div>`;
+    const btn = box.querySelector('button');
+    btn.addEventListener('click', ()=>{
+      u.following = !u.following;
+      if(u.following) u.followers++;
+      else u.followers = Math.max(0,u.followers-1);
+      saveUsers(); renderRecommended();
+    });
+    container.appendChild(box);
+  });
+}
+
+/* small helper: show sample placeholder videos/images for seeded posts */
+(function attachPlaceholders(){
+  posts = posts.map(p=>{
+    if(!p.mediaURL){
+      // small placeholder (data URIs or remote unsplash small image)
+      if(p.mediaType==='image') p.mediaURL = 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='800' height='450'><rect width='100%' height='100%' fill='#0b1220'/><text x='50%' y='50%' fill='#9fbadf' font-size='28' dominant-baseline='middle' text-anchor='middle'>Poksy preview image</text></svg>`);
+      else p.mediaURL = '';
+    }
+    return p;
+  });
+  savePosts(); renderFeed();
+})();
+
+</script>
+</body>
 </html>
